@@ -2,6 +2,8 @@
 
 OpenShift Virtualization Tools - A web-based inventory tool for OpenShift Virtualization environments, inspired by RVTools.
 
+![graphs](docs/graphs.png)
+
 ![ovtools](docs/screenshot.png)
 
 ## Features
