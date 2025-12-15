@@ -50,6 +50,12 @@ podman ps
 # 1814c4cdd769  quay.io/andrerocha_redhat/ovtools:latest  -bind 0.0.0.0 -po...  17 seconds ago  Up 17 seconds  0.0.0.0:8080->8080/tcp  ovtools-app
 ```
 
+Dev Mode (Demo Mode):
+
+```sh
+podman run --env OVTOOLS_DEV_MODE=true -d --name ovtools-app -p 8080:8080  quay.io/andrerocha_redhat/ovtools:latest
+```
+
 #### Access
 
 ```sh
