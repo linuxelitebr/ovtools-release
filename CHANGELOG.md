@@ -21,3 +21,17 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 - Incorrect CPU model detection on some VMs
+
+## [0.0.9] 2025-12-16
+
+### Added
+- Web UI
+  - Nodes tab:
+    - Sorting by column
+  - Snapshots tab:
+    - Filtering by namespace
+    - Sorting by column
+
+### Fixed
+  - Nodes tab:
+    - Search counter
