@@ -35,3 +35,14 @@ All notable changes to this project will be documented in this file.
 ### Fixed
   - Nodes tab:
     - Search counter
+
+## [0.1.0] 2025-12-17
+
+### Added
+- Web UI
+  - Health tab:
+    - Filtering by namespace
+    - Sorting by column
+  - Disks tab:
+    - Filtering by namespace
+    - Sorting by column
