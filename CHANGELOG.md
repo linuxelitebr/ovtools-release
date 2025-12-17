@@ -40,9 +40,34 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 - Web UI
+  - Cluster connection indicator
   - Health tab:
     - Filtering by namespace
     - Sorting by column
+    - Filtering by severity
   - Disks tab:
     - Filtering by namespace
     - Sorting by column
+    - Search by VM, disk or PVC bar
+  - Network tab:
+    - Filtering by namespace and NAD
+    - Sorting by column
+    - Search by VM, MAC and IP bar
+  - CPU tab:
+    - Filtering by namespace
+    - Sorting by column
+    - Search by VM, node and model bar
+  - PVC tab:
+    - Filtering by namespace
+    - Sorting by column
+    - Search by VM, PVC, App and SC bar
+  - Datastore tab:
+    - Sorting by column
+  - Snapshots tab:
+    - Search by VM or snapshot bar
+  - Dashboard tab
+    - Cards:
+      - Node Distribution by Load
+      - Nodes Requiring Attention
+      - PVCs per Storage Class
+      - PVC Status Overview
