@@ -85,3 +85,19 @@ All notable changes to this project will be documented in this file.
   - Node and VM Status filters on CPUs tab
   - Smooth hover transitions on Topology view
   - Filtering for tabs that didn't have them
+
+
+## [0.1.2] 2025-12-18
+
+### Added
+- Web UI
+  - Topology tab:
+    - Network and storage topology
+
+## [0.1.3] 2025-12-18
+
+### Fixed
+  - VM tab:
+    - Some VMs were appearing with unknown status
+  - Topology tab
+    - The Reset View button is not working
