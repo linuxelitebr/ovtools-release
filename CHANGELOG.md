@@ -71,3 +71,17 @@ All notable changes to this project will be documented in this file.
       - Nodes Requiring Attention
       - PVCs per Storage Class
       - PVC Status Overview
+
+## [0.1.1] 2025-12-18
+
+### Added
+- Web UI
+  - Topology
+  - Node and Guest Agent filters on VMs tab
+  - Age and Ready filters on Snapshots tab
+  - Storage Class and PVC Status filters on Disks tab
+  - Node filter on Networks tab
+  - Storage Class, Status, and Type filters on PVCs tab
+  - Node and VM Status filters on CPUs tab
+  - Smooth hover transitions on Topology view
+  - Filtering for tabs that didn't have them

@@ -7,6 +7,8 @@ A web-based inventory tool for OpenShift Virtualization environments, inspired b
 
 ![ovtools](docs/screenshot.png)
 
+![topology](docs/topology.png)
+
 ## Features
 
 - **VM Inventory**: List all VMs with status, resources, IPs, and guest agent info
