@@ -1,7 +1,8 @@
 # OVTools
 
-**OpenShift Virtualization Tools**: 
-A web-based inventory tool for OpenShift Virtualization environments, inspired by RVTools.
+**OVTools (OpenShift Virtualization Tools)** is a web-based inventory and operational visibility tool for **OpenShift Virtualization**, inspired by the familiar experience of **RVTools** in VMware environments.
+
+It was created to help teams migrating from VMware regain fast, centralized visibility into their virtual machines, nodes, and operational health, without bypassing OpenShift-native concepts such as **RBAC**, **namespaces**, and **multi-tenancy**.
 
 ![graphs](docs/graphs.png)
 
@@ -9,72 +10,85 @@ A web-based inventory tool for OpenShift Virtualization environments, inspired b
 
 ![topology](docs/topology.png)
 
+## Why OVTools?
+
+During VMware to OpenShift Virtualization migrations, teams often lose the tooling they relied on for day-to-day operations. While the data still exists in Kubernetes APIs, consuming it usually requires CLI commands, YAML parsing, or custom scripts.
+
+OVTools bridges this gap by translating Kubernetes and KubeVirt resources into a **clear**, **human-friendly operational view**, enabling faster troubleshooting, capacity planning, and reporting.
+
 ## Features
 
-- **VM Inventory**: List all VMs with status, resources, IPs, and guest agent info
-- **Node Overview**: Cluster nodes with capacity, workload distribution, and health
-- **Snapshots**: Track VM snapshots with age warnings
-- **Health Checks**: Identify configuration issues and resource problems
-- **Export**: Download data as Excel (XLSX) or CSV
-- **Auto-refresh**: 30-second automatic refresh without changing active tab
-- **Multi-user**: Session-based authentication using user's own credentials
-- **Etc**
+- **VM Inventory**  
+  Centralized view of all virtual machines with status, resources, IPs, and guest agent information.
+  
+- **Node Overview**  
+  Cluster nodes with capacity details, workload distribution, and overcommit ratios.
 
-## Authentication
+- **Snapshot Visibility**  
+  Track VM snapshots with age-based warnings to maintain snapshot hygiene.
 
-OVTools supports two authentication methods:
+- **Health Checks**
+  Detect common configuration issues, missing resource limits, disconnected guest agents, and node problems.
 
-| Method | Description | Use Case |
-|--------|-------------|----------|
-| **Token** | Bearer token from `oc whoami -t` | Quick access, CLI users |
-| **Kubeconfig** | Paste kubeconfig content | Full config with context |
+- **Export Capabilities**
+  Download inventory and operational data as Excel (XLSX) or CSV files, compatible with existing reporting workflows.
 
-**Important**: Your credentials are used to connect to the cluster but are NOT stored. Sessions expire after 1 hour.
+- **Auto-refresh**
+  Live data with automatic refresh every 30 seconds without losing context.
 
-### RBAC
+- **Multi-user Access**
+  Session-based authentication using each user’s own OpenShift credentials.
 
-OVTools uses **delegated authentication** - each user sees only what their RBAC permissions allow:
-- Cluster-admin sees all namespaces
-- Namespace-scoped users see only their namespaces
-- No special service account permissions required
+## Authentication and Security
+
+OVTools uses **delegated authentication**, meaning:
+
+- Users authenticate with their own OpenShift credentials
+- All access respects existing RBAC rules
+- No privileged service accounts are required
+- Credentials are never stored or persisted
+- Sessions automatically expire after 1 hour
+
+### Supported Authentication Methods
+
+| Method | Description | Typical Use |
+|--------|-------------|-------------|
+| **Token** | `oc whoami -t` | Quick access |
+| **Kubeconfig** | Paste kubeconfig content | Full context-based access |
+
 
 ## Quick Start
 
-Run locally:
+### Run locally (container)
 
 ```sh
 podman run -d --name ovtools-app -p 8080:8080  quay.io/andrerocha_redhat/ovtools:latest
 ```
 
+Access:
+
 ```sh
-podman ps
-# CONTAINER ID  IMAGE                                     COMMAND               CREATED         STATUS         PORTS                   NAMES
-# 1814c4cdd769  quay.io/andrerocha_redhat/ovtools:latest  -bind 0.0.0.0 -po...  17 seconds ago  Up 17 seconds  0.0.0.0:8080->8080/tcp  ovtools-app
+open http://<IP>:8080
 ```
 
-Dev Mode (Demo Mode):
+## Dev Mode (Demo Mode)
+
+Dev Mode allows you to explore OVTools **without connecting to a real cluster**.
+The UI is fully functional and populated with sample data, making it ideal for:
+
+- Demos
+- Evaluations
+- Screenshots
+- Feature exploration
 
 ```sh
-podman run --env OVTOOLS_DEV_MODE=true -d --name ovtools-app -p 8080:8080  quay.io/andrerocha_redhat/ovtools:latest
+podman run --env OVTOOLS_DEV_MODE=true --replace -d --name ovtools-app -p 8080:8080  quay.io/andrerocha_redhat/ovtools:latest
 ```
 
-#### Access
+## Deploying on OpenShift
 
-```sh
-http://<IP>:8080
-```
-
-### OpenShift Deployment
-
-Create namespace:
-
-```sh
+```bash
 oc new-project ovtools
-```
-
-Deploy:
-
-```sh
 oc apply -f deploy/openshift/
 ```
 
@@ -84,51 +98,23 @@ Get route URL:
 oc get route ovtools -o jsonpath='{.spec.host}'
 ```
 
-## Configuration
+## Configuration Flags
 
 | Flag | Default | Description |
 |------|---------|-------------|
 | `-bind` | `0.0.0.0` | Listen address |
 | `-port` | `8080` | HTTP port |
-| `-cache-ttl` | `60` | Cache TTL in seconds |
+| `-cache-ttl` | `60` | Cache TTL (seconds) |
 | `-version` | - | Show version and exit |
+
 
 ## Architecture
 
 ![architecture](docs/diagram.png)
 
-## Data Collected
-
-### VMs Tab
-- Name, Namespace, Status
-- vCPUs, Memory, Disks
-- Node placement, Primary IP
-- Guest OS (from guest agent)
-- Guest Agent status and version
-- Etc
-
-### Nodes Tab
-- Name, Status, Role
-- CPU/Memory capacity and allocatable
-- VM count, vCPU/vRAM totals
-- Overcommit ratios
-- Taints and schedulability
-- Etc
-
-### Snapshots Tab
-- Name, VM association
-- Creation date, Age
-- Ready status, Size
-
-### Health Tab
-- VM configuration issues
-- Resource warnings
-- Snapshot age alerts
-- Node problems
-
 ## License
 
-Apache 2.0
+Apache Apache License 2.0
 
 ## Author
 
