@@ -97,7 +97,23 @@ All notable changes to this project will be documented in this file.
 ## [0.1.3] 2025-12-18
 
 ### Fixed
+- Web UI
   - VM tab:
     - Some VMs were appearing with unknown status
   - Topology tab
     - The Reset View button is not working
+
+## [0.1.4] 2025-12-19
+
+### Added
+- Web UI
+  - VM tab:
+    - IOPS metrics
+
+## [0.1.5] 2025-12-19
+
+### Added
+- Web UI
+  - Disks tab:
+    - IOPS metrics
+  
