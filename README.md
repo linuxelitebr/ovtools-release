@@ -108,6 +108,10 @@ oc get route ovtools -o jsonpath='{.spec.host}'
 | `-version` | - | Show version and exit |
 
 
+## See OVTools in action!
+
+[![OVTools](videos/ovtools.jpg)](videos/ovtools.mp4)
+
 ## Architecture
 
 ![architecture](docs/diagram.png)
