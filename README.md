@@ -110,7 +110,7 @@ oc get route ovtools -o jsonpath='{.spec.host}'
 
 ## See OVTools in action!
 
-[![OVTools](videos/ovtools.jpg)](https://github.com/linuxelitebr/ovtools-release/releases/download/v0.1.5/ovtools.mp4)
+[![Watch OVTools demo (MP4)](videos/ovtools.jpg)](https://github.com/linuxelitebr/ovtools-release/releases/download/v0.1.5/ovtools.mp4)
 
 
 ## Architecture
