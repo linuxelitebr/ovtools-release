@@ -105,8 +105,16 @@ oc get route ovtools -o jsonpath='{.spec.host}'
 | `-bind` | `0.0.0.0` | Listen address |
 | `-port` | `8080` | HTTP port |
 | `-cache-ttl` | `60` | Cache TTL (seconds) |
+| `-api-timeout` | `60` | API request timeout (seconds) |
 | `-version` | - | Show version and exit |
 
+## Supported ENVs
+
+| Variable | Description | Default | Example |
+|----------|-------------|---------|---------|
+| `OVTOOLS_DEV_MODE` | Enable developer mode with mock data (no cluster required) | `false` | `true` |
+| `OVTOOLS_API_TIMEOUT` | Kubernetes API request timeout in seconds | `60` | `120` |
+| `KUBECONFIG` | Path to kubeconfig file | `~/.kube/config` | `/path/to/kubeconfig` |
 
 ## See OVTools in action!
 

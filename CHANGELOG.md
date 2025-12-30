@@ -116,4 +116,18 @@ All notable changes to this project will be documented in this file.
 - Web UI
   - Disks tab:
     - IOPS metrics
-  
+
+## [0.1.6] 2025-12-30
+
+### Added
+- Web UI
+  - General
+    - Visual data loading indicator
+    - OnClick events to dashboard charts
+  - Topology:
+    - Overview with drill-down
+- Engine
+  - Default API request timeout of 60s
+  - API timeout adjustment by parameter
+  - Optimized data loading and cache usage for large clusters
+  - Added adaptive pre-fetch that adjusts refresh intervals to cluster latency
