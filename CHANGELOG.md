@@ -131,3 +131,27 @@ All notable changes to this project will be documented in this file.
   - API timeout adjustment by parameter
   - Optimized data loading and cache usage for large clusters
   - Added adaptive pre-fetch that adjusts refresh intervals to cluster latency
+
+## [0.1.7] 2025-01-07
+
+### Added
+- XLSX Export
+  - Summary sheet as first tab with executive overview
+  - vCluster sheet with cluster info, totals and ratios
+  - vMemory sheet with VM memory details and node context
+  - vGuestAgent sheet with guest agent status and OS details
+  - vEvents sheet with recent VM-related events (limited to 24h, max 500)
+  - vMigration sheet with live migration history
+  - vDataVolume sheet with CDI DataVolume details
+  - vTemplate sheet with VM templates catalog
+  - OVTools version included in Summary sheet
+  - Merged title cell in Summary for cleaner presentation
+- Web UI
+  - Loading indicator on XLSX export button
+  - Button disabled during export generation
+
+### Changed
+- XLSX Export
+  - Sheet order reorganized: Summary > vCluster > technical sheets
+  - vInfo enriched with Uptime, Guest Agent data, Labels, Annotations
+  - vHost enriched with Taints, Boot Time, Uptime
