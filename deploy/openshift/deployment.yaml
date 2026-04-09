@@ -1,0 +1,316 @@
+# OVTools - OpenShift Virtualization Tools
+# Single-file deployment for OpenShift with oauth-proxy sidecar
+#
+# Usage:
+#   1. Generate a cookie secret and update the Secret below:
+#      openssl rand -base64 32
+#
+#   2. Apply the manifest:
+#      oc apply -f deployment.yaml
+#
+#   3. Get the route URL:
+#      oc get route ovtools -n ovtools -o jsonpath='{.spec.host}'
+#
+# Image:
+#   quay.io/andrerocha_redhat/ovtools:latest
+#
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ovtools
+  labels:
+    app.kubernetes.io/name: ovtools
+    app.kubernetes.io/part-of: ovtools
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ovtools
+  namespace: ovtools
+  labels:
+    app.kubernetes.io/name: ovtools
+  annotations:
+    # Tells OpenShift OAuth to redirect back to the ovtools Route after login
+    serviceaccounts.openshift.io/oauth-redirectreference.primary: >-
+      {"kind":"OAuthRedirectReference","apiVersion":"v1","reference":{"kind":"Route","name":"ovtools"}}
+    # Auto-approve OAuth grant without showing a consent screen to the user
+    serviceaccounts.openshift.io/oauth-grant-method: auto
+---
+# ClusterRoleBinding required for oauth-proxy to validate user tokens
+# via TokenReview and SubjectAccessReview APIs
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: ovtools-oauth-proxy
+  labels:
+    app.kubernetes.io/name: ovtools
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: system:auth-delegator
+subjects:
+  - kind: ServiceAccount
+    name: ovtools
+    namespace: ovtools
+---
+# ClusterRole to allow user impersonation.
+# system:impersonator is a standard Kubernetes ClusterRole but may not exist in
+# some distributions (e.g. Hypershift). We define it explicitly to ensure portability.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: system:impersonator
+  labels:
+    app.kubernetes.io/name: ovtools
+rules:
+  - apiGroups: [""]
+    resources: ["users", "groups", "serviceaccounts"]
+    verbs: ["impersonate"]
+  - apiGroups: ["authentication.k8s.io"]
+    resources: ["userextras"]
+    verbs: ["impersonate"]
+---
+# ClusterRoleBinding required for ovtools to impersonate users.
+# Allows the ovtools SA to call the Kubernetes API on behalf of authenticated users
+# (via the Impersonate-User header) so the API server enforces per-user RBAC.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: ovtools-impersonator
+  labels:
+    app.kubernetes.io/name: ovtools
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: system:impersonator
+subjects:
+  - kind: ServiceAccount
+    name: ovtools
+    namespace: ovtools
+---
+# ClusterRole to allow the ovtools SA to list OpenShift groups.
+# Required to resolve group membership at impersonation time so that
+# group-based RBAC (e.g. LDAP-synced groups) is correctly enforced.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: ovtools-group-reader
+  labels:
+    app.kubernetes.io/name: ovtools
+rules:
+  - apiGroups: ["user.openshift.io"]
+    resources: ["groups"]
+    verbs: ["list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: ovtools-group-reader
+  labels:
+    app.kubernetes.io/name: ovtools
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: ovtools-group-reader
+subjects:
+  - kind: ServiceAccount
+    name: ovtools
+    namespace: ovtools
+---
+# ClusterRoleBinding to allow the ovtools SA to read Prometheus metrics.
+# Required for Prometheus connectivity in the datastore view.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: ovtools-monitoring-view
+  labels:
+    app.kubernetes.io/name: ovtools
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-monitoring-view
+subjects:
+  - kind: ServiceAccount
+    name: ovtools
+    namespace: ovtools
+---
+# Cookie secret used by oauth-proxy to encrypt session cookies.
+# Must be exactly 16, 24, or 32 bytes. Generate with:
+#   openssl rand -base64 24 | tr -d '\n'
+# Replace the value below before applying.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ovtools-oauth-cookie-secret
+  namespace: ovtools
+  labels:
+    app.kubernetes.io/name: ovtools
+stringData:
+  cookie-secret: "REPLACE_ME_WITH_openssl_rand_-base64_24"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ovtools
+  namespace: ovtools
+  labels:
+    app.kubernetes.io/name: ovtools
+    app.kubernetes.io/version: "latest"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: ovtools
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: ovtools
+    spec:
+      serviceAccountName: ovtools
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        # oauth-proxy: handles OpenShift OAuth login and forwards authenticated
+        # requests to ovtools with X-Forwarded-Access-Token header
+        - name: oauth-proxy
+          image: registry.redhat.io/openshift4/ose-oauth-proxy:latest
+          imagePullPolicy: Always
+          args:
+            - --https-address=:8443
+            - --provider=openshift
+            - --openshift-service-account=ovtools
+            - --upstream=http://127.0.0.1:8080
+            - --tls-cert=/etc/tls/private/tls.crt
+            - --tls-key=/etc/tls/private/tls.key
+            - --cookie-secret-file=/etc/oauth/cookie-secret
+            - --skip-auth-regex=^/healthz$
+            - --openshift-ca=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+          ports:
+            - name: oauth
+              containerPort: 8443
+              protocol: TCP
+          volumeMounts:
+            - mountPath: /etc/tls/private
+              name: tls
+              readOnly: true
+            - mountPath: /etc/oauth
+              name: oauth-cookie-secret
+              readOnly: true
+          # Probes target oauth-proxy (8443/HTTPS) which forwards /healthz to ovtools
+          # without auth due to --skip-auth-regex=^/healthz$
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: oauth
+              scheme: HTTPS
+            initialDelaySeconds: 5
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: oauth
+              scheme: HTTPS
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+
+        - name: ovtools
+          # Multi-arch image: AMD64 and ARM64
+          image: quay.io/andrerocha_redhat/ovtools:latest
+          imagePullPolicy: Always
+          env:
+            - name: OVTOOLS_DEV_MODE
+              value: "false"
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          args:
+            - "-bind"
+            - "127.0.0.1"
+            - "-port"
+            - "8080"
+            - "-cache-ttl"
+            - "60"
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+
+      volumes:
+        # TLS certificate auto-generated by OpenShift for the Service
+        - name: tls
+          secret:
+            secretName: ovtools-tls
+        - name: oauth-cookie-secret
+          secret:
+            secretName: ovtools-oauth-cookie-secret
+            items:
+              - key: cookie-secret
+                path: cookie-secret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ovtools
+  namespace: ovtools
+  labels:
+    app.kubernetes.io/name: ovtools
+  annotations:
+    # Instructs OpenShift to generate a TLS certificate for this Service
+    # and store it in the secret named below (used by oauth-proxy)
+    service.alpha.openshift.io/serving-cert-secret-name: ovtools-tls
+spec:
+  type: ClusterIP
+  ports:
+    - name: oauth
+      port: 8443
+      targetPort: oauth
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: ovtools
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: ovtools
+  namespace: ovtools
+  labels:
+    app.kubernetes.io/name: ovtools
+spec:
+  to:
+    kind: Service
+    name: ovtools
+    weight: 100
+  port:
+    targetPort: oauth
+  tls:
+    # reencrypt: router terminates TLS with the public wildcard cert (browser-trusted),
+    # then re-encrypts to oauth-proxy using the cluster-internal cert (ovtools-tls).
+    # The router automatically trusts certs signed by the OpenShift service CA.
+    termination: reencrypt
+    insecureEdgeTerminationPolicy: Redirect
+  wildcardPolicy: None
