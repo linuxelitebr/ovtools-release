@@ -1,0 +1,677 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+## [0.17.0] 2026-08-21
+
+### Added
+- A health check names the virtual machines claiming the same MAC address, with the namespaces and networks involved. The cluster raises its own alert when duplicates appear, but says only that they exist. It counts both the address a machine is running with and the one pinned in its configuration, because two machines can ask for the same address while only one of them gets it, and nothing in the running state shows that the other asked. The message says which of the three situations it is: both running with it, one running and one waiting to take it at its next restart, or neither running with it yet.
+
+### Changed
+- The grouping control on the Fleet tab marks the view you are looking at more quietly. It was painted in the same strong blue the buttons that do something use, so a control that only reports where you are stood out more than the actions around it.
+
+## [0.16.0] 2026-08-20
+
+### Added
+- A health check reports Windows virtual machines running without the Hyper-V enlightenments. Without them Windows behaves as though it were on physical hardware and pays a full trip to the hypervisor for work that a single call would settle, which shows up as sluggish menus and slow application launches while the CPU figures look ordinary. Machines that arrive through a migration are the usual case, since the migration creates them without the settings the Red Hat Windows templates carry. It is reported once for the fleet with the count, rather than once per machine, and links to a write-up of how to apply them.
+
+### Fixed
+- Demo mode no longer shows a stopped virtual machine attached to a node. Its disks inherited the contradiction and reported a node for a machine that is not running anywhere.
+
+## [0.15.0] 2026-08-20
+
+BU Interlock release.
+
+### Added
+- The health checks for a virtual machine now appear in its detail panel, so someone inspecting a machine sees its warnings without having to know they live on the Health tab. When the node underneath has a check of its own, the panel says so and links to it, because a node problem belongs to the node rather than to every machine running on it. A machine with nothing to report shows no section at all.
+- A health check flags a vCPU change that never reached the guest. The virtual machine reads as though the change was granted and the guest does not have it, so whoever asked and whoever approved both believe it happened. The check separates a change that has not been applied yet from one that cannot be applied at all, because the socket ceiling puts it out of reach.
+- The vCPU count in the VMs table invites a closer look where the number needs qualifying: when the machine is waiting for a CPU, or when a change to that count never landed. Resting the pointer on it explains which.
+- The overcommit figure on the Nodes tab links to the machines behind it, when there are any waiting for a CPU.
+
+### Changed
+- vCPU counts are what the guest has, not what the machine was configured to ask for. The two part company when a change cannot be applied to a running machine, and every figure built on the count inherited the wrong one: the vCPUs column, the detail panels, the overcommit ratio per node, the dashboard total and the spreadsheet ratio. What was asked for is kept separately and shown where it differs.
+- The node CPU check says what the machines on the node measure instead of concluding it from the node's own pressure. The two are different readings: node pressure counts time when anything at all on the machine was queued, which logging and monitoring reach on their own, while the per-machine reading is what that guest lost. A node under pressure whose machines all read fine no longer raises a warning nobody can act on; the figure stays on the Nodes tab where it belongs.
+
+### Fixed
+- Demo mode shows health checks against the machines and nodes it actually generates. Every check named a placeholder, so none of them could be tied to anything on screen, and the new detail panel would have looked empty for every machine.
+- The vCPU wait figures in demo mode stay put between refreshes instead of being drawn again each time.
+
+## [0.14.0] 2026-08-19
+
+### Added
+- OVTools now says which virtual machines are waiting for a CPU. This is the reading VMware administrators know as CPU ready: the share of time a machine's virtual CPUs spend queued for a physical one while the guest believes they are running. It sits next to the vCPU count on the VMs tab, in the detail panel and in the Fleet pane, and it raises a health check past the same thresholds people arriving from VMware already use. Machines with pinned CPUs are left out, because they own their CPUs and never queue for one.
+- A health check flags a virtual machine given more vCPUs than the node it runs on has CPUs. A machine configured that way has never had all of its vCPUs running at once. The message shows how the vCPUs are laid out, which usually explains where the count came from, since machines imported from VMware carry that sizing over as it was.
+- The labels people put on their virtual machines are on screen: a column in the VMs table, and a row in the detail panel and the Fleet pane. The column starts hidden, because labels are long and most people are not looking for them. Labels that OpenShift Virtualization writes for its own bookkeeping are left out.
+
+### Changed
+- When a tab is refused for lack of permission, the notice names a role for the one resource that was refused. It used to suggest read access to the whole cluster, which would have handed over every workload in the namespaces the person is not meant to see.
+- The read role that shipped with the deployment was taken back out, for the same reason. It granted read access across every namespace, which is the wrong answer for anyone whose access is meant to stop at their own projects.
+
+### Fixed
+- The Refresh button shows the data it asked for. It used to show the previous figures, and only a second press showed anything new. It now stays busy until the new data arrives and then reloads the tab, without holding up the rest of the interface, and pressing it again while it works joins the refresh already running instead of queueing another.
+- The CSV button says a tab has nothing to export, instead of sending the person to an error page outside the application. It affects Dashboard, Topology, Fleet and Console, which are not tables.
+- Tabs load faster for a user whose access is limited to a few namespaces. An empty list was being read as a missing one, so every render fetched it again rather than using the answer already held.
+- The first load is faster on large clusters. The health checks were listing the virtual machines again when the refresh cycle had already done it. On a cluster of about 800 machines the first load went from 18 to 15 seconds.
+
+## [0.13.0] 2026-08-18
+
+### Added
+- OVTools now has a light theme, picked from a settings menu in the header. The default follows the operating system, so a machine set to switch in the evening switches OVTools with it, and an explicit choice is remembered. The login screen, the charts and the topology map all follow whichever theme is in use.
+- Resting the pointer on the logo now says what it is. The logo has always been a link back to the dashboard.
+- The snapshot contents list now shows where the orphaned storage is concentrated, grouped by storage class, by driver and by the namespace the snapshot came from. Each group separates the part that deleting the content will not free, which is the part that has to be reclaimed on the storage system. The breakdown follows whatever filters are applied.
+
+### Changed
+- The footer now shows only the version.
+
+### Fixed
+- Status badges, labels and severity marks are readable in both themes. Most of them carried a colour picked when dark was the only theme, which left them faint on the dark background, and hovering a row made them harder to read rather than easier. The row under the pointer was the hardest one in the table.
+- Demo mode now raises every health check a real cluster raises. It was showing about a third of them, alongside a set of check types that no cluster produces, so the check type filter offered values that match nothing and hid most of what the tool reports.
+- Demo mode now shows the case where two storage classes share a Ceph pool and the usage figure passes 100 percent, which is what the explanation on the Used column exists for.
+- The usage figures in the tables colour their text again instead of filling the whole cell with a block of colour, and the storage usage bar is visible again.
+- A tab no longer keeps saying you are not permitted to view it after the access has been granted. The refusal was remembered for the rest of the session and it replaced the rows, so the data stayed hidden until the next sign-in.
+- The loading indicator no longer shows a dark panel over a light page.
+- The panel showing where orphaned storage sits now lines up with the table below it.
+- The Logout button is back inside the header actions instead of sitting against Refresh.
+- The note under the orphaned storage breakdown now says which columns it means and what the space is that deleting a content will not free. It sits between two tables and read as though it described the wrong one.
+
+## [0.12.2] 2026-08-18
+
+### Fixed
+- Demo mode now shows the same snapshot reclaim advice a real cluster gets, including both deletion policies side by side, instead of the older single summary line.
+- The link from an orphaned snapshot content to the OpenShift console now opens the right page. It was pointing one level too deep and did not land where it should.
+- Console links are built correctly on clusters whose console address is recorded with a trailing slash, which would previously have produced a doubled slash in the link.
+
+## [0.12.1] 2026-08-07
+
+### Added
+- The snapshot contents list now totals the space held by the orphaned entries it is showing, following whatever filters are applied, so narrowing to the old ones answers how much that selection would give back.
+- The health check now says whether deleting an orphaned snapshot content actually frees anything. When its deletion policy is Retain it does not: the snapshot stays on the storage system and has to be reclaimed there, which is the usual case for snapshots left behind by a backup tool. The snapshot's identifier on the storage system is now available as a column and in the exports, so it can be found on the array.
+- An orphaned snapshot content found by the health check now links straight to its page in the OpenShift console, so it can be inspected without hunting for it by name. The link opens the YAML, which is where the driver, volume handle and source snapshot are; the console has no dedicated page for this kind. Only orphans get the link.
+
+### Fixed
+- The warning about Prometheus returning no data no longer appears right after opening the dashboard when nothing is actually wrong. The check runs while the first load is still in progress and could simply run out of time, which was being reported as a problem with the cluster. The warning now waits until the condition is still there on the following check. The status dot still changes colour immediately, so a real outage is visible straight away.
+
+### Added
+- When the Prometheus check does report no data, the log now says whether the check failed to complete or genuinely found nothing, which is the first question when someone reports the warning.
+
+## [0.12.0] 2026-08-07
+
+### Added
+- Users whose access is limited to a few namespaces now see their own virtual machines, disks, networks, CPU, storage claims, health checks and metrics, instead of an empty dashboard. What each person sees matches what their permissions allow, the same way the OpenShift Virtualization console behaves. Nothing changes for users who can already read the whole cluster.
+- Tabs that need cluster-wide access a user does not have, such as Nodes and Datastore, now say so and name the permission to ask an administrator for, instead of showing an empty table with no explanation. A note at the top of the page lists everything the session could not read, so partial numbers are not mistaken for the whole cluster.
+
+### Changed
+- The dashboard loads several times faster. OVTools was holding its own requests back well below what the cluster allows; on a test cluster the first load went from about 10 seconds to about 2.
+
+### Fixed
+- Signing in repeatedly no longer leaves earlier sessions refreshing data in the background, which slowly added memory use and cluster traffic over a long-running day.
+- Some health warnings could appear for every virtual machine at once when OVTools could not read a cluster-wide setting they depend on. Those checks now stay quiet instead of reporting a problem they cannot actually see.
+
+### Notes
+- On plain Kubernetes with KubeVirt, a namespace-limited user needs either permission to list namespaces or the new `OVTOOLS_NAMESPACES` setting naming their namespaces. On OpenShift this works with no configuration.
+
+## [0.11.8] 2026-08-05
+
+### Fixed
+- On large clusters OVTools could run out of memory and restart in a loop at startup. The bundled deployment now gives the container more memory and keeps the runtime within that limit, so it starts and stays up on big fleets.
+
+### Changed
+- Metrics now work for regular (non-admin) users and on clusters that route traffic through an HTTP proxy. When running inside the cluster, OVTools reads metrics from the internal monitoring service directly instead of the external address.
+
+### Added
+- OVTools now records which monitoring endpoint it uses, and any connection error, in its log, so it is easier to tell why a metrics column shows "-".
+
+### Upgrade
+- Reapply the OpenShift deployment manifest (oc apply -f deploy/openshift/) to pick up the new memory settings. Updating the image on its own keeps the old limits.
+
+## [0.11.7] 2026-08-04
+
+### Fixed
+- Signing in with an "@" in the username (an email-style OpenShift user) now works; the dashboard is no longer empty for those accounts. OpenShift's proxy shortens such names to the part before the "@", and OVTools now recovers the full username so the user's own permissions apply.
+
+### Upgrade
+- This fix needs one added read permission on the service account. Updating the image on its own is safe and changes nothing for users who already sign in; reapply the OpenShift deployment manifest (oc apply -f deploy/openshift/) to grant the permission and turn the fix on for "@" usernames.
+
+## [0.11.6] 2026-07-31
+
+### Fixed
+- The cluster name in the spreadsheet export (Summary tab and file name) is now the real cluster name, instead of a number like "172" on clusters whose API server is reached by IP address.
+
+## [0.11.5] 2026-07-31
+
+### Changed
+- Dashboard: the "VMs per Node" card uses vertical bars again (it scrolls sideways when a cluster is large), and the three "per node" cards are ordered by node name, so each node keeps a consistent place.
+
+## [0.11.4] 2026-07-31
+
+### Fixed
+- Dashboard: the "per node" charts (VMs, vCPU, memory) drew every node into a fixed box, so on a large cluster the bars thinned out, labels dropped, and bars looked out of line with their hostnames. They now show one row per node, sorted with the busiest node first, and the card scrolls when there are more nodes than fit.
+
+## [0.11.3] 2026-07-31
+
+### Added
+- PVCs tab: an orphaned PVC now has a link that opens it directly in the OpenShift console, so you can inspect or remove it without searching for it there. The link appears only where OVTools can read the console address.
+
+## [0.11.2] 2026-07-31
+
+### Changed
+- Topology: the Node → VMs view now opens as a list of nodes with their VM counts; click a node to see just its VMs, the same way the storage and network views already work. It no longer draws the whole cluster at once, which was slow and hard to read on large clusters.
+
+### Fixed
+- Topology: a node with no usage metrics no longer shows its usage as 0% in the tooltip.
+
+## [0.11.1] 2026-07-30
+
+### Fixed
+- Topology: the overview colours each node using the same usage thresholds as the Nodes tab, so a node that is green on the Nodes tab is no longer shown amber in the topology view.
+
+### Security
+- Updated a bundled library to include an upstream security fix.
+
+## [0.11.0] 2026-07-29
+
+### Added
+- Topology: drilling into a storage class, network, or NAD with many items now groups them by namespace, so you can open one namespace at a time. This replaces the "show anyway" prompt.
+
+### Changed
+- Topology: the overview now colours each node by its CPU and memory usage (the higher of the two) instead of by VM count, matching the Nodes tab. Nodes with no metrics are shown in grey, and hovering a node shows its CPU and memory figures.
+- The cluster footprint panel now shows when live metrics were last read.
+
+## [0.10.0] 2026-07-28
+
+### Added
+- Cluster footprint panel: a new view in the About dialog shows how light OVTools is on the cluster: how often it refreshes the inventory, how much of the live metrics it serves from its own cache, and how fresh the data is. It reads what OVTools already tracks, so opening it adds no load.
+- Topology: the network view now groups attachments into per-network hubs you can click to open, the same way the storage and namespace views already work, so a busy network no longer draws as one unreadable graph.
+
+### Changed
+- The Nodes tab now judges CPU overcommit by real contention instead of the raw ratio. A node is highlighted only when its VMs are actually waiting for CPU time, so a high ratio on an idle node no longer looks like a problem, and genuine contention on a modest ratio is not missed. Hovering a node explains the reading. This reads the signal the cluster descheduler provides; without the descheduler, the previous ratio-based view is kept, so nothing is lost.
+- The Health tab flags CPU overcommit the same way (on real contention rather than the ratio), and its CPU and memory overcommit checks now link to background reading.
+
+## [0.9.1] 2026-07-24
+
+### Added
+- OVTools now compresses its responses, so pages and tables load faster over the network. It is on by default and can be turned off when a proxy or load balancer in front already compresses.
+
+## [0.9.0] 2026-07-24
+
+### Added
+- The Node column now links to the Nodes tab from the VMs, CPU, Disk and Network tabs.
+- The VM name in the Disk, Network, CPU, PVC and Snapshot tabs is now a link that opens the VMs tab filtered to that VM.
+- The VM details panel shows how the vCPUs are arranged, for example "2 sockets × 2 cores".
+- A new uninstall script (uninstall.sh) removes OVTools from a cluster cleanly.
+- Topology: a view that is too large to draw now offers a way to narrow it down, either starting from the Overview or stepping back to a smaller group, instead of only a "show anyway" prompt. The Node and NAD views are now protected the same way the other large views are.
+
+### Changed
+- Topology: a storage class or namespace with a very large number of volumes now draws a trimmed view with a "+N more" marker instead of an unreadable graph.
+- Live usage metrics (CPU, memory, network, disk) are held for a few seconds, so busy screens and the automatic refresh stop re-querying the monitoring stack on every redraw. It can be tuned or turned off with a setting.
+- OVTools opens faster on large clusters. It no longer contacts every VM's guest agent for information the cluster already reports.
+- The Health tab lists each orphaned disk by name, with why it is orphaned and how to reclaim it, instead of a single count.
+- Red status badges (Orphan, Stopped, Lost, and similar) are easier to read against the dark background.
+
+### Fixed
+- The Nodes tab search keeps its filter through the automatic refresh and when sorting a column. It used to reset.
+- A disk from a migration that has not finished is no longer reported as an orphan that is safe to delete; it is flagged for review instead.
+- Health: the IOThreads and virtio-rng suggestions now name the VMs they apply to, instead of showing only a count.
+
+## [0.8.0] 2026-07-14
+
+### Added
+- Fleet: a search box finds a VM by name. The groups that match open with their VMs already listed.
+- Fleet: the VM details show the last live migration, with its date, the nodes the VM moved between and how long it took.
+- The installer adds an OVTools entry to the OpenShift console launcher on clusters that run Virtualization.
+
+### Fixed
+- Fleet: the availability dial shows a loading state while it is being calculated. On a large cluster it could stay missing for several minutes.
+- Health: the IOThreads suggestion now only appears for VMs that actually do heavy disk work. It used to appear on almost every cluster.
+- Health: the virtio-rng suggestion no longer counts a Windows VM without a guest agent as a Linux one.
+- Demo mode: the Disks, CPU and storage views now match the VM list. The storage topology no longer draws VMs that do not exist.
+
+## [0.7.2] 2026-07-12
+
+### Fixed
+- Fleet: VMs without a hostname now show their internal cluster DNS name.
+
+## [0.7.1] 2026-07-12
+
+### Added
+- Fleet: the VM details show a Source: the template the VM was created from, or "Migrated from VMware" for VMs imported by the Migration Toolkit for Virtualization.
+
+### Fixed
+- Fleet: the Eviction strategy shows the cluster-wide default when a VM doesn't set one.
+- Fleet: the hostname falls back to the VM's configured value when none is reported.
+- Fleet: the Activity header no longer overlaps the feed text as it scrolls.
+- Topology: the Network view asks before drawing a very large shared network, and keeps the loading indicator visible while it renders.
+
+## [0.7.0] 2026-07-12
+
+### Added
+- Fleet: the selected VM shows live dials for CPU, memory, storage, network and disk I/O, plus a 30-day availability dial.
+- Fleet: the VM details list its network interfaces, storage volumes and snapshots, and show how the vCPUs are arranged into sockets and cores.
+- Fleet: the tree and activity panes can be resized and collapsed, and the tab reopens on the VM you last looked at.
+- Topology: double-clicking an object opens its tab filtered to that item.
+
+### Changed
+- Topology: each object is drawn as an icon instead of a plain shape.
+- Fleet VM details are grouped into a Hardware and a Configuration column.
+
+### Fixed
+- Topology: clicking a VM in the Network view shows its IPs, and the Storage and Namespace views show its disks.
+- Searching the Network, Nodes and Storage-class tabs now matches the network, NAD, node and storage-class names.
+- Double-clicking a node in the topology no longer does nothing or reports an error.
+- The VMs and Nodes tables no longer leave empty space on the right when their columns scroll sideways.
+- After an upgrade the interface loads the new files, not a cached copy.
+
+## [0.6.1] 2026-07-12
+
+### Fixed
+- vCPU counts were wrong for some VMs: those created from the OpenShift console could show 0, and stopped VMs showed 1. They are now read from the VM's own socket and core settings.
+- Volumes that had not finished binding showed their size as "0 B" instead of the requested size.
+- A VM's primary IP could be listed twice, or be blank when the VM's main connection was on a secondary interface.
+- On the Network tab, the Type column was blank for macvtap and binding-plugin interfaces such as passt, and the IPv6 column could show a link-local address in place of the routable one.
+- On the Nodes tab, the CPU Overcommit ratio was understated on nodes that reserve part of a CPU for the system, and a taint with no value showed a stray "=" (for example "node-role.kubernetes.io/control-plane=:NoSchedule").
+- On the Storage tab, a PVC whose name matched more than one category (such as "redis") could be labeled differently on each refresh. Disks from migrated VMs, including Windows state volumes, are now identified as VM disks.
+- Health now treats two cases as warnings rather than errors: the per-node VM agent being briefly down during a normal OpenShift Virtualization upgrade, and a missing network on a stopped VM.
+- A VM whose pod was killed for running out of memory was reported only as "failed"; the Health entry now says it ran out of memory.
+- A stopped VM defined with the older on/off setting could show as "Unknown" instead of "Stopped".
+- When a resource was deleted down to none, its tab kept showing the old entries until the next full refresh.
+
+## [0.6.0] 2026-07-11
+
+### Added
+- Fleet tab: browse VMs grouped by namespace or by node. Selecting a VM shows its details next to its recent activity (live migrations, snapshots, creation and last start) and a link to its console.
+- Per-VM availability: how much of the recent window (up to 30 days) a VM was running, shown in the VM details, the Fleet tab, and the spreadsheet export. It comes from Prometheus, so it depends on your metrics retention.
+
+### Changed
+- The Storage and Namespace topology views drew every PVC at once, which was slow on large clusters. They now open as an overview (one node per storage class or namespace, with a count) that you click to drill into.
+- Updated the bundled spreadsheet-export and Kubernetes client libraries.
+
+## [0.5.2] 2026-07-09
+
+### Added
+- ovtools now shows when a newer version is available. A mark appears on the footer version, and the About panel gets a line linking to the release. The check runs in your browser, anonymously, once a day, and can be turned off with `OVTOOLS_DISABLE_UPDATE_CHECK`.
+- The Nodes tab explains the CPU and Memory Overcommit columns on hover, telling you whether a ratio is within the normal range, and colors the VRAM Total column by the node's real memory usage.
+
+### Fixed
+- The "Show anyway" button on very large topology views did nothing when clicked. It now loads the view and shows progress while it draws.
+- Disks belonging to migrated VMs showed as "App Data" on the PVC tab instead of "VM Disk". They are now identified as VM disks even when the usual KubeVirt labels are missing.
+- The failed-migration entry on the Health tab now shows the date it happened, so a recent failure reads differently from an old one.
+
+### Changed
+- The dashboard's "Nodes Requiring Attention" card treated normal CPU allocation as load, so healthy nodes showed up red. It now judges CPU by real usage and memory by how much of it is committed, with both figures and the free memory shown on hover.
+- The "Node Distribution by Load" card counted nodes by allocation rather than real load, so on a virtualization cluster nearly every node fell in the top band. The card now counts by real CPU usage.
+
+### Improved
+- On the Health tab, the IOThreads and virtio-rng tuning notes were one row per VM and filled the list on large clusters. Each is now a single summary line.
+
+## [0.5.1] 2026-07-04
+
+### Added
+- Health now catches many more problems that can take a VM down: VMs running but not ready or with a lost disk; VMs that can't schedule, can't pull their image, or keep crashing; failed disk imports and lost or unbound storage; nodes under memory, disk or PID pressure or with a broken network; node network settings that didn't apply; degraded OpenShift Virtualization, KubeVirt, CDI, SSP or networking operators; failed or killed VM pods; volumes that won't attach; VMs wired to a network that no longer exists; failed live migrations; and the per-node KubeVirt agent missing from a node. Health can be filtered by any of these types.
+- Sortable metric columns: CPU, memory and network on the VMs and Nodes tabs, Read and Write IOPS on Disks, and type on Datastores.
+- Topology: opening a very large "Storage → PVC → VM" or "Namespace → PVC → VM" view now asks for confirmation first, with a one-time note explaining the view. Popups show a VM's volumes in the Storage view and its network attachments in the NAD view, and busy views group the remainder under "Other".
+
+### Fixed
+- Auto-refresh no longer resets your search, filters, sorting or current page.
+- The "Snapshots By Age" card on the dashboard was empty; it now populates.
+- Health no longer reports a missing eviction strategy, CPU model or resource limits when the VM inherits them from cluster or namespace defaults. That was firing on almost every VM.
+
+### Improved
+- Reordered the Topology view dropdown so the busiest view (Network → VMs) comes last.
+
+## [0.5.0] 2026-07-03
+
+### Added
+- CSI VolumeSnapshots are now first-class. A single Snapshots tab shows every VolumeSnapshot with its readiness, source PVC, age and owning VM, links VMSnapshot-managed rows back to their VMSnapshot, and flags snapshots set to retain their content. Snapshot classes are shown for reference, and orphaned snapshot content (storage left behind with no VolumeSnapshot pointing at it) is surfaced as a Health check you can drill into.
+- Large tables now load in pages. VMs, Snapshots, PVCs, Disks, Network, CPU and Snapshot Contents paginate (50 rows per page by default, configurable and remembered in the browser), so clusters with thousands of objects stay fast. Search, filters and sorting carry across pages.
+- Two new topology views. "NAD to VMs" groups virtual machines under the network attachment definition they connect to, replacing the single crowded multus hub. "Namespace to PVC to VM" groups persistent volume claims under their namespace, spreading storage out instead of piling it onto one storage-class hub. The older views remain in the dropdown.
+- The Health tab can be filtered by resource type, making it easy to isolate orphans or any other kind of check. It works alongside the existing severity and namespace filters and the drill-down links.
+
+### Fixed
+- Switching tabs while auto-refresh was running could throw a "Canvas is already in use" error on the dashboard. Fixed.
+- Search on the VMs tab now filters reliably from the server instead of silently doing nothing.
+
+### Improved
+- Status badges are consistent everywhere now: uppercase, no leading dot, and a single smaller text size across all tabs (including Ready / NotReady on Snapshots and unified Health severities).
+- Exported spreadsheets write true/false in English instead of a locale word that could overflow the column.
+
+## [0.4.0] 2026-05-23
+
+### Added
+- Ceph health card on the Health tab. Auto-detected. If Prometheus is federating the Ceph metrics (HEALTH_OK / WARN / ERR, OSD status, PG degradation, recent crashes, near-full pools), every firing health check shows up as a row with severity, plain-English explanation and a link to the upstream docs anchor. Nothing shows up on clusters without Ceph; no flag, no extra config.
+- Tri-state Prometheus connection indicator (green, yellow, red). Green is data flowing. Yellow is the half-failure case: Prometheus answers HTTP but the kubevirt or node-exporter scrape pool dropped, so every metric column would render as `-`. Red is the endpoint not answering at all. The previous indicator only had green or red, so a degraded Prometheus showed up as "connected" while the dashboard quietly emptied out.
+- Banner above the VMs and Nodes tabs when Prometheus is reachable but returning no scrape data. Spells out the likely cause (degraded `prometheus-k8s` pod, missing ServiceMonitor) so the operator knows where to look instead of blaming ovtools.
+- Top dashboard cards are now clickable. Total VMs, Running, Stopped, vCPUs Allocated, Nodes, Old Snapshots, Health Issues each navigate to the matching tab with the right filter pre-applied. Keyboard-accessible (`Tab` + `Enter`).
+- Persistent banner when the connected cluster has no KubeVirt installed. Explains that ovtools is built for OpenShift Virtualization and most tabs will be empty otherwise. Dismissal is per-cluster, so connecting to a different cluster without KubeVirt brings it back.
+- Tooltip on the Datastores tab explaining why Used % can exceed 100 % when two StorageClasses share the same Ceph pool. Lists which other StorageClasses share the pool so the user can do the math.
+
+### Fixed
+- Column chooser silently broke after revisiting a tab. The inline `<script>` re-declared a top-level `const`, threw SyntaxError on every subsequent load, and the rest of the script never ran. Symptom: clicking a checkbox rerouted the page to the VMs tab. Tab templates now wrap their scripts in IIFEs.
+- Bar clicks on "VMs per Node", "vCPU Allocation per Node" and "Memory Allocation per Node" routed to an empty VMs tab because the node label was truncated for the chart axis and then reused as the filter target. The click handler now sends the full FQDN.
+- VM disks created from instance-type DataSources were misclassified as "Template" on the PVCs tab. The CDI controller propagates the template label onto every cloned disk, so the heuristic was catching every running VM's root disk. Fixed to only count canonical template PVCs.
+- Topology view switcher crashed with `TypeError: data.edges is null` on clusters with no matching resources. The Go handlers returned nil slices that JSON encoded as `null`. They now always return arrays.
+- Cytoscape threw `renderer is null` after navigating away from the Topology tab because a queued resize callback fired on a destroyed instance. The callback now checks `cy.destroyed()` before touching the renderer.
+- Chart.js threw `Canvas is already in use` after coming back to the Dashboard. Orphaned chart instances from earlier renders stayed in the registry and conflicted with the new canvases. The dashboard now sweeps every live Chart.js instance before creating new ones.
+- Tab swaps flashed the loading overlay for a single frame on every cached response. The cache serves a tab in roughly 5 ms; the overlay went on and off inside the same paint window, which the eye reads as flicker. The spinner is now deferred and only paints if the load actually takes longer than 200 ms.
+
+### Improved
+- Auto-refresh on tabs with thousands of rows no longer rebuilds the entire DOM every 60 seconds. The refresh path uses morph; only changed cells get updated, the rest stay in place. Tab switches still use a clean swap so listeners do not leak between tabs.
+- Stale-while-revalidate is now formally documented in CLAUDE.md as a non-negotiable, with tests that fail if a handler bypasses the cache or talks to Prometheus or the k8s API on the render path.
+- Most of the per-tab UI plumbing moved into shared static modules (`col-chooser.js`, `row-count.js`). Each tab template now declares its configuration via `data-*` attributes instead of carrying its own 80-line copy of the same JS. The browser caches one module instead of re-parsing inline blocks on every swap.
+
+### Removed
+- Per-PVC Block usage via `rbd du`. The original v0.4.0 plan called for filling in the `-` placeholder on Block-mode PVCs by talking to the Ceph MGR. After verifying against ODF 4.21, the only path that does not require either a CLI flag (rejected) or a librados dependency on the ovtools side was to expose `ceph_rbd_image_used_bytes` from the MGR Prometheus module, which ODF does not emit. The placeholder stays. Documented in `docs/ENTERPRISE_ROADMAP.md` along with the conditions under which the item could come back.
+
+## [0.3.3] 2026-05-16
+
+### Added
+- Privacy notice popup on first open of the dashboard, with a 10-second auto-dismiss timer and a re-open link from the About dialog
+- `PRIVACY.md` at the repo root documenting what ovtools processes, where the data lives, what it never does, what the logs contain, and how LGPD/GDPR legal basis sits with the operator
+- Community files: `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md`, `THIRD_PARTY_LICENSES.md`, issue and pull-request templates
+
+### Fixed
+- Bumped `golang.org/x/net` to close GO-2026-4918, an HTTP/2 transport infinite loop reachable through the login flow
+- Mock client now flags Block PVCs so the Datastores tooltip is visible in developer mode
+
+### Improved
+- CI runs `govulncheck` on every push and pull request, catching Go CVEs before Dependabot picks them up
+- Container image scanned by Trivy on each release; high and critical findings fail the build
+- SPDX SBOM emitted by `anchore/sbom-action` and attached to the GitHub Release
+- README gets the standard set of badges (CI status, latest release, license, Go version, GHCR image), repo topics added for discoverability
+- `.dockerignore` cleaned up and a stray customer-name reference removed
+- ENTERPRISE_ROADMAP reframed around v1.0.0 as the technical milestone where enterprise features land, without pricing-tier language
+
+## [0.3.2] 2026-05-06
+
+### Changed
+- Project moved to the `elastocera` GitHub org. The container image now lives at `ghcr.io/elastocera/ovtools` and the repository URL is `github.com/elastocera/ovtools`. The public `linuxelitebr/ovtools-release` mirror still gets release artifacts during the transition.
+- Toast notifications redesigned to match the dashboard cards: subtle top accent instead of a thick coloured left border, plus a proper error variant.
+
+### Fixed
+- Container images now report the version they were built with. Earlier builds always reported the version baked into source, regardless of which tag was used.
+
+## [0.3.1] 2026-04-10
+
+### Added
+- New `-prometheus-url` flag (and `OVTOOLS_PROMETHEUS_URL` env var) to override the auto-discovered Prometheus endpoint, useful when running the binary outside the cluster (e.g. via `oc port-forward`)
+
+### Improved
+- `install.sh` now detects upgrade conflicts on the Deployment selector and offers to recreate the Deployment automatically, preserving all other resources
+
+## [0.3.0] 2026-04-09
+
+### Added
+- VM detail drawer: click any VM row to see its specs, disks and network interfaces side-by-side without leaving the table
+- Info tooltip on Datastores explaining why Block mode volumes show "-" for usage, with a link to the Kubernetes documentation
+
+### Improved
+- Dashboard redesigned with clean typography and contextual icons; alerts now surface through a subtle top accent instead of a heavy colored bar
+
+## [0.2.2] 2026-04-08
+
+### Fixed
+- Datastores showing near-zero or incorrect usage for storage classes with Block mode PVCs (VM disks)
+- Datastores showing pool-level usage for Filesystem-only storage classes that share a Ceph pool
+- Shows "-" instead of misleading "0 B" when no usage data is available for Block volumes
+- "Initial data load complete" notification disappearing before user could read it on large clusters
+- Release workflow now includes `deployment-legacy.yaml` in assets and uses `.zip` for Windows binary
+
+### Improved
+- Release notes on GitHub now show only the current version instead of the full changelog
+- OpenShift deployment YAMLs now use `imagePullPolicy: IfNotPresent` for the ovtools container
+
+## [0.2.1] 2026-04-07
+
+### Fixed
+- Datastores tab showing incorrect or zero usage for large storage classes
+- Users with group-based permissions (e.g. LDAP) getting "forbidden" errors despite having cluster-admin access
+
+## [0.2.0] 2026-04-02 - *Easter Bunny Release* 🐰
+
+### Highlights
+- In-cluster SSO with OAuth Proxy
+  - Automatic login via OpenShift (no manual token needed)
+    - Users already logged into the OpenShift console are seamlessly authenticated in ovtools
+    - Works on both standalone OpenShift and Hypershift clusters
+    - Includes:
+      - oauth-proxy sidecar
+      - Required RBAC (system:impersonator, Prometheus access). Use `install.sh` and the new `deployment.yaml`
+      - Automatic TLS certificate generation
+    - Logout now properly terminates both ovtools and OpenShift sessions
+> The OAuth Proxy works when ovtools is installed on the cluster and is not run from the binary
+
+### Added
+- Health Check
+  - New VM tuning checks (especially for VMware-migrated workloads):
+    - CPU, NIC, Disk (bus/cache), RNG, IOThreads
+  - Detects suboptimal configurations with Warning/Info levels
+  - Direct links to remediation documentation
+  - RNG check skipped for Windows VMs
+  - Search/filter support across checks
+- Export (XLSX and CSV)
+  - Health: added reference URL column
+  - CPU: requests and limits
+  - PVC: usage status and DataVolume
+  - Nodes: allocatable CPU/memory and kubelet version
+  - Snapshots: status and size
+  - Disks: cache, volume mode, and hotplug
+
+### Fixed
+- Logout behavior fixed with OAuth Proxy (prevents unintended silent re-login)
+- Dashboard:
+  - Charts no longer break after auto-refresh
+  - Fixed missing data issue caused by k8s client race condition
+- Topology:
+  - UI state now persists across refreshes
+
+### Changed
+- Deployment
+  - ovtools now binds to 127.0.0.1 when using OAuth Proxy
+  - TLS switched to re-encrypt (public cert externally, cluster CA internally)
+  - Service port changed to 8443 (proxy)
+  - Added deployment-legacy.yaml:
+    - For older setups (no OAuth, TLS, or RBAC)
+- Web UI
+  - Auto-refresh now shows a progress bar and remaining time
+  - Tooltips added for long table values
+  - Dashboard charts render correctly when switching tabs
+
+## [0.1.9] 2026-03-21
+
+### Added
+- Web UI
+  - Column Chooser on all remaining tabs: Nodes, Disks, Networks, CPUs, PVCs, Snapshots, Datastores
+  - All tabs now have consistent column selection UX with localStorage persistence
+- CI/CD
+  - GitHub Actions CI pipeline: automated `go build`, `go vet`, `go test` on every push/PR
+  - Updated Actions to Node.js 24 compatible versions (actions/checkout@v5, actions/setup-go@v6)
+- Testing
+  - 153 unit tests covering sort functions, security helpers, and config
+
+### Changed
+- Web UI
+  - Replaced full-page refresh with idiomorph (DOM morphing): eliminates screen flicker on sorting, filtering and tab switching
+  - Topology tab intentionally excluded (will be addressed separately)
+
+### Security
+- Fixed potential XSS in display names (`html.EscapeString`)
+- Fixed URL injection in console URL construction (`url.PathEscape` + K8s name validation)
+- Added security headers middleware (X-Content-Type-Options, X-Frame-Options, Referrer-Policy, Permissions-Policy)
+
+## [0.1.8] 2026-03-15
+
+### Added
+- Web UI
+  - Column Chooser in vInfo tab: select which columns are visible
+  - Column preferences persisted in localStorage across sessions
+  - Reset to defaults button in column chooser panel
+  - Columns `Created` and `Started` (optional, off by default)
+  - VM name as clickable link to OpenShift console (real clusters only)
+
+### Changed
+- Web UI
+  - vInfo tab: optional columns (Net Rx, Net Tx, Disks, NICs, Agent Version) hidden by default to reduce visual noise
+  - Empty state rows use `colspan="99"` to remain correct regardless of visible column count
+
+## [0.1.7] 2026-01-07
+
+### Added
+- XLSX Export
+  - Summary sheet as first tab with executive overview
+  - vCluster sheet with cluster info, totals and ratios
+  - vMemory sheet with VM memory details and node context
+  - vGuestAgent sheet with guest agent status and OS details
+  - vEvents sheet with recent VM-related events (limited to 24h, max 500)
+  - vMigration sheet with live migration history
+  - vDataVolume sheet with CDI DataVolume details
+  - vTemplate sheet with VM templates catalog
+  - OVTools version included in Summary sheet
+  - Merged title cell in Summary for cleaner presentation
+- Web UI
+  - Loading indicator on XLSX export button
+  - Button disabled during export generation
+
+### Changed
+- XLSX Export
+  - Sheet order reorganized: Summary > vCluster > technical sheets
+  - vInfo enriched with Uptime, Guest Agent data, Labels, Annotations
+  - vHost enriched with Taints, Boot Time, Uptime
+
+## [0.1.6] 2025-12-30
+
+### Added
+- Web UI
+  - General
+    - Visual data loading indicator
+    - OnClick events to dashboard charts
+  - Topology:
+    - Overview with drill-down
+- Engine
+  - Default API request timeout of 60s
+  - API timeout adjustment by parameter
+  - Optimized data loading and cache usage for large clusters
+  - Added adaptive pre-fetch that adjusts refresh intervals to cluster latency
+
+## [0.1.5] 2025-12-19
+
+### Added
+- Web UI
+  - Disks tab:
+    - IOPS metrics
+
+## [0.1.4] 2025-12-19
+
+### Added
+- Web UI
+  - VM tab:
+    - IOPS metrics
+
+## [0.1.3] 2025-12-18
+
+### Fixed
+- Web UI
+  - VM tab:
+    - Some VMs were appearing with unknown status
+  - Topology tab
+    - The Reset View button is not working
+
+## [0.1.2] 2025-12-18
+
+### Added
+- Web UI
+  - Topology tab:
+    - Network and storage topology
+
+## [0.1.1] 2025-12-18
+
+### Added
+- Web UI
+  - Topology
+  - Node and Guest Agent filters on VMs tab
+  - Age and Ready filters on Snapshots tab
+  - Storage Class and PVC Status filters on Disks tab
+  - Node filter on Networks tab
+  - Storage Class, Status, and Type filters on PVCs tab
+  - Node and VM Status filters on CPUs tab
+  - Smooth hover transitions on Topology view
+  - Filtering for tabs that didn't have them
+
+## [0.1.0] 2025-12-17
+
+### Added
+- Web UI
+  - Cluster connection indicator
+  - Health tab:
+    - Filtering by namespace
+    - Sorting by column
+    - Filtering by severity
+  - Disks tab:
+    - Filtering by namespace
+    - Sorting by column
+    - Search by VM, disk or PVC bar
+  - Network tab:
+    - Filtering by namespace and NAD
+    - Sorting by column
+    - Search by VM, MAC and IP bar
+  - CPU tab:
+    - Filtering by namespace
+    - Sorting by column
+    - Search by VM, node and model bar
+  - PVC tab:
+    - Filtering by namespace
+    - Sorting by column
+    - Search by VM, PVC, App and SC bar
+  - Datastore tab:
+    - Sorting by column
+  - Snapshots tab:
+    - Search by VM or snapshot bar
+  - Dashboard tab
+    - Cards:
+      - Node Distribution by Load
+      - Nodes Requiring Attention
+      - PVCs per Storage Class
+      - PVC Status Overview
+
+## [0.0.9] 2025-12-16
+
+### Added
+- Web UI
+  - Nodes tab:
+    - Sorting by column
+  - Snapshots tab:
+    - Filtering by namespace
+    - Sorting by column
+
+### Fixed
+  - Nodes tab:
+    - Search counter
+
+## [0.0.8] 2025-12-15
+
+### Added
+- Developer Mode (Demo Mode)
+- Web UI
+  - VMs tab:
+    - Filtering by namespace
+    - More VM details
+    - Sorting by column
+    - Search bar
+  - Nodes tab:
+    - Search bar (still need to adjust the counter)
+- Health endpoint
+
+### Changed
+- Replaced probes on deployment file (from `/login` to `/healthz`)
+
+### Fixed
+- Incorrect CPU model detection on some VMs
+
+## [0.0.1 - 0.0.7] 2025-10 to 2025-12-14
+
+The earliest scaffolding of the project. Detailed per-version notes from that period are not preserved, so this entry summarises what the codebase looked like by the time 0.0.8 landed:
+
+### Added
+- Go web server (`cmd/ovtools/main.go`) with a single `internal/server` package serving HTML templates plus htmx for partial swaps.
+- Manual login screen accepting either a bearer token (paired with the API server URL) or a pasted kubeconfig. Session lived in memory and expired after one hour.
+- In-memory cache wrapping the Kubernetes client so the dashboard did not refetch on every request.
+- First read-only inventory views: a VMs tab listing virtual machines with their basic spec, and a Nodes tab listing cluster nodes.
+- A Dashboard tab with summary counts (total VMs, running, stopped, vCPUs allocated, nodes ready) rendered as cards.
