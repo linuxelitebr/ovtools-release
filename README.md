@@ -7,11 +7,13 @@
 
 It was created to help teams migrating from VMware regain fast, centralized visibility into their virtual machines, nodes, and operational health, without bypassing OpenShift-native concepts such as **RBAC**, **namespaces**, and **multi-tenancy**.
 
-![graphs](docs/graphs.png)
+![dashboard](docs/images/ovtools-dashboard.avif)
 
-![ovtools](docs/screenshot.png)
+![virtual-machines](docs/images/ovtools-vms.avif)
 
-![topology](docs/topology.png)
+![health-check](docs/images/ovtools-health-check.avif)
+
+![topology](docs/images/ovtools-topology.avif)
 
 ## Why OVTools?
 
@@ -160,7 +162,7 @@ oc get route ovtools -o jsonpath='{.spec.host}'
 
 ## Architecture
 
-![architecture](docs/diagram.png)
+![architecture](docs/images/architecture.png)
 
 ## Requirements
 
