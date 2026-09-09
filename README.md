@@ -158,7 +158,7 @@ oc get route ovtools -o jsonpath='{.spec.host}'
 
 ### Run locally (binary file)
 
-To run the binary directly without using a container or installing it, download the version compatible with your operating system [here](https://github.com/linuxelitebr/ovtools-release/releases).
+To run the binary directly without using a container or installing it, download the version compatible with your operating system [here](../../releases).
 
 ## See OVTools in action!
 
