@@ -112,7 +112,7 @@ Open the UI:
 open http://<IP>:8080
 ```
 
-## Dev Mode (Demo Mode)
+### Dev Mode (Demo Mode)
 
 Dev Mode runs the UI without a real cluster, populated with sample data. Good for demos, evaluations, screenshots, and walking through features:
 
@@ -120,7 +120,7 @@ Dev Mode runs the UI without a real cluster, populated with sample data. Good fo
 podman run --env OVTOOLS_DEV_MODE=true --replace -d --name ovtools-app -p 8080:8080  ghcr.io/elastocera/ovtools:latest
 ```
 
-## Deploying on OpenShift
+### Deploying on OpenShift
 
 Apply the manifests:
 
@@ -135,7 +135,7 @@ Get the route URL:
 oc get route ovtools -o jsonpath='{.spec.host}'
 ```
 
-## Configuration Flags
+#### Configuration Flags
 
 | Flag | Default | Description |
 |------|---------|-------------|
@@ -146,7 +146,7 @@ oc get route ovtools -o jsonpath='{.spec.host}'
 | `-prometheus-url` | (auto) | Override auto-discovered Prometheus/Thanos URL |
 | `-version` | - | Show version and exit |
 
-## Supported ENVs
+#### Supported ENVs
 
 | Variable | Description | Default | Example |
 |----------|-------------|---------|---------|
@@ -155,6 +155,10 @@ oc get route ovtools -o jsonpath='{.spec.host}'
 | `OVTOOLS_PROMETHEUS_URL` | Override auto-discovered Prometheus/Thanos URL | (auto) | `https://localhost:9091` |
 | `OVTOOLS_NAMESPACES` | Namespaces a limited user may see, comma-separated. Only needed on plain Kubernetes; see below | (auto) | `team-a,team-b` |
 | `KUBECONFIG` | Path to kubeconfig file | `~/.kube/config` | `/path/to/kubeconfig` |
+
+### Run locally (binary file)
+
+To run the binary directly without using a container or installing it, download the version compatible with your operating system [here](releases).
 
 ## See OVTools in action!
 
