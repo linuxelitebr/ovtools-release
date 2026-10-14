@@ -1,0 +1,123 @@
+# OVTools - OpenShift Virtualization Tools
+# Deployment for versions 0.1.9 and below (no oauth-proxy SSO)
+#
+# Authentication: manual token or kubeconfig via the login screen.
+# Use deployment.yaml instead if you are on version 0.2.0 or later.
+#
+# Usage:
+#   oc new-project ovtools
+#   oc apply -f deployment-legacy.yaml
+#   oc get route ovtools -n ovtools -o jsonpath='{.spec.host}'
+#
+# Image:
+#   ghcr.io/elastocera/ovtools:<version>
+#
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ovtools
+  labels:
+    app.kubernetes.io/name: ovtools
+    app.kubernetes.io/part-of: ovtools
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ovtools
+  namespace: ovtools
+  labels:
+    app.kubernetes.io/name: ovtools
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: ovtools
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: ovtools
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: ovtools
+          image: ghcr.io/elastocera/ovtools:0.1.9
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: OVTOOLS_DEV_MODE
+              value: "false"
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          args:
+            - "-bind"
+            - "0.0.0.0"
+            - "-port"
+            - "8080"
+            - "-cache-ttl"
+            - "60"
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ovtools
+  namespace: ovtools
+  labels:
+    app.kubernetes.io/name: ovtools
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: ovtools
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: ovtools
+  namespace: ovtools
+  labels:
+    app.kubernetes.io/name: ovtools
+spec:
+  to:
+    kind: Service
+    name: ovtools
+    weight: 100
+  port:
+    targetPort: http
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
+  wildcardPolicy: None
